@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>柯南少年偵探團：踩數字敏捷力大作戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #090d16 0%, #171c28 50%, #1e152a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+        .pixel-art {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .number-btn:active {
+            transform: scale(0.92);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+            animation: shake 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+<!-- 初始聊天卡片預覽介面 (含開啟按鈕) -->
+<div id="card-preview" class="w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-2xl p-4 shadow-2xl relative transition-all duration-300">
+    <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-sky-600/30 border border-sky-400/50 flex items-center justify-center text-sky-400 flex-shrink-0 text-lg">
+            🔍
+        </div>
+        <div class="flex-1 min-w-0">
+            <h2 class="text-white font-bold text-base md:text-lg truncate">柯南少年偵探團：踩數字敏捷力大作戰</h2>
+            <p class="text-xs text-slate-400 mt-1">10月21日 20:25</p>
+        </div>
+    </div>
+    <div class="mt-4 flex justify-end">
+        <button id="btn-open-app" class="bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold px-5 py-2 rounded-full text-sm shadow-md transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5">
+            開啟
+        </button>
+    </div>
+</div>
+
+<!-- 完整遊戲主介面 (預設隱藏，點擊「開啟」後顯示) -->
+<div id="game-container" class="w-full max-w-4xl flex flex-col items-center justify-between gap-6 py-4 hidden">
+
+    <!-- 頂部標題列 -->
+    <header class="w-full text-center">
+        <div class="inline-block bg-sky-950/80 border border-sky-500/40 px-6 py-1.5 rounded-full mb-2 shadow-lg backdrop-blur-md">
+            <span class="text-sky-400 font-bold tracking-wider text-xs uppercase">🔍 少年偵探團專屬訓練系統</span>
+        </div>
+        <h1 class="text-3xl md:text-5xl font-black tracking-wider bg-gradient-to-r from-amber-400 via-rose-400 to-sky-400 bg-clip-text text-transparent drop-shadow-md">
+            踩數字敏捷力大作戰
+        </h1>
+    </header>
+
+    <!-- 主要內容區塊 -->
+    <main class="w-full flex flex-col gap-6">
+
+        <!-- 角色選擇清單（一行一個垂直排列，精準對應圖片編號 1~6） -->
+        <section class="bg-slate-900/90 border border-slate-700/60 rounded-2xl p-4 md:p-6 shadow-xl backdrop-blur-md">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg md:text-xl font-bold text-amber-300 flex items-center gap-2">
+                    <span>👥</span> 選擇偵探團成員 (垂直單行排列)
+                </h2>
+                <span class="text-xs text-sky-400 bg-sky-950/80 px-3 py-1 rounded-full border border-sky-800">點擊切換搭檔</span>
+            </div>
+            <div id="character-list" class="flex flex-col gap-3">
+                <!-- 由 JavaScript 動態生成 1 到 6 號角色 -->
+            </div>
+        </section>
+
+        <!-- 遊戲控制與狀態區 -->
+        <section class="bg-slate-900/90 border border-slate-700/60 rounded-2xl p-4 md:p-6 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4 text-center md:text-left">
+                <div class="bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">目前搭檔</span>
+                    <span id="active-char-name" class="font-bold text-sky-400 text-lg">亮戶川柯南</span>
+                </div>
+                <div class="bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">遊戲計時</span>
+                    <span id="timer-display" class="font-mono font-bold text-emerald-400 text-lg">0.00 秒</span>
+                </div>
+                <div class="bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">得分進度</span>
+                    <span id="score-display" class="font-mono font-bold text-amber-400 text-lg">0 / 10</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <button id="btn-custom" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold px-4 py-2.5 rounded-xl transition shadow border border-slate-600 flex items-center gap-2 text-sm">
+                    <span>⚙️</span> 自定義數字
+                </button>
+                <button id="btn-auto" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl transition shadow flex items-center gap-2 text-sm">
+                    <span>🤖</span> 自動展示
+                </button>
+                <button id="btn-start" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black px-6 py-2.5 rounded-xl transition shadow-lg flex items-center gap-2 text-sm">
+                    <span>▶️</span> 開始挑戰
+                </button>
+            </div>
+        </section>
+
+        <!-- 數字點擊遊戲主面板 -->
+        <section class="bg-slate-900/90 border-2 border-sky-500/40 rounded-2xl p-6 shadow-2xl backdrop-blur-md flex flex-col items-center justify-center min-h-[360px] relative overflow-hidden">
+            <div id="game-overlay-msg" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-6">
+                <div class="text-6xl mb-4 animate-bounce">🔍</div>
+                <h3 class="text-2xl md:text-3xl font-black text-white mb-2">準備好破解案件了嗎？</h3>
+                <p class="text-slate-300 max-w-md text-sm md:text-base mb-6">點擊上方「開始挑戰」或選擇自定義數字，按照 1 到 N 的順序依序點擊數字方塊！</p>
+                <button id="btn-overlay-start" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-8 py-3 rounded-xl text-lg shadow-xl transition transform hover:scale-105 flex items-center gap-2">
+                    <span>▶️</span> 立即開始遊戲
+                </button>
+            </div>
+
+            <!-- 數字網格容器 -->
+            <div id="number-grid" class="grid grid-cols-4 md:grid-cols-5 gap-3 w-full max-w-2xl">
+                <!-- 數字由 JS 動態填入 -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 頁腳 -->
+    <footer class="w-full text-center text-xs text-slate-500 mt-2">
+        <p>© 柯南少年偵探團敏捷力訓練系統 | 依照編號精準對應角色與垂直清單</p>
+    </footer>
+</div>
+
+<!-- 自定義數字 Modal -->
+<div id="custom-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <h3 class="text-xl font-bold text-amber-300 mb-3 flex items-center gap-2"><span>⚙️</span> 設定自定義數字</h3>
+        <p class="text-slate-300 text-sm mb-4">輸入您想要挑戰的數字（用逗號分隔，例如：1, 2, 3, 4, 5, 6, 7, 8, 9, 10）：</p>
+        <textarea id="custom-input" rows="4" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-100 font-mono text-sm focus:outline-none focus:border-sky-500 mb-4">1, 2, 3, 4, 5, 6, 7, 8, 9, 10</textarea>
+        <div class="flex justify-end gap-3">
+            <button id="btn-modal-cancel" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold">取消</button>
+            <button id="btn-modal-save" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2 rounded-xl text-sm font-bold shadow">套用設定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 破案成功過場動畫 Modal -->
+<div id="victory-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-lg z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400 rounded-3xl p-8 w-full max-w-lg shadow-2xl text-center relative overflow-hidden">
+        <div class="absolute -top-12 -left-12 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-sky-500/20 rounded-full blur-2xl"></div>
+        
+        <div class="text-6xl mb-3">🏆</div>
+        <h2 class="text-3xl md:text-4xl font-black text-amber-300 tracking-wider mb-1">真相永遠只有一個！</h2>
+        <p class="text-sky-400 font-semibold mb-6">案件完美破解成功！</p>
+        
+        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 mb-6 flex justify-around text-center">
+            <div>
+                <span class="text-xs text-slate-400 block">使用搭檔</span>
+                <span id="vic-char" class="font-bold text-white text-lg">-</span>
+            </div>
+            <div>
+                <span class="text-xs text-slate-400 block">總計時間</span>
+                <span id="vic-time" class="font-mono font-bold text-emerald-400 text-lg">-</span>
+            </div>
+        </div>
+
+        <button id="btn-victory-close" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black px-8 py-3 rounded-xl text-lg shadow-xl w-full transition transform hover:scale-[1.02]">
+            再次挑戰案件
+        </button>
+    </div>
+</div>
+
+<!-- JavaScript 遊戲邏輯與頭像繪製 -->
+<script>
+    const characters = [
+        { id: 1, name: "亮戶川柯南", type: "敏捷型", desc: "頭腦清晰、經典8-bit像素偵探造型", activeColor: "border-sky-500 bg-sky-950/40" },
+        { id: 2, name: "灰原頤", type: "冷靜型", desc: "冷靜敏銳的科學分析專家 (編號2)", activeColor: "border-purple-500 bg-purple-950/40" },
+        { id: 3, name: "瑜田步美", type: "靈巧型", desc: "心地善良、反應敏捷的可愛隊員 (編號3)", activeColor: "border-pink-500 bg-pink-950/40" },
+        { id: 4, name: "瑋谷光彥", type: "智慧型", desc: "博學多聞、推理能力極佳 (編號4)", activeColor: "border-emerald-500 bg-emerald-950/40" },
+        { id: 5, name: "毛利蓉", type: "力量型", desc: "充滿正義感與強大氣場的後盾 (編號5)", activeColor: "border-rose-500 bg-rose-950/40" },
+        { id: 6, name: "阿聖博士", type: "後援型", desc: "發明無數道具的可靠博士 (編號6)", activeColor: "border-amber-500 bg-amber-950/40" }
+    ];
+
+    let activeCharacterId = 1;
+    let numbers = [];
+    let currentTarget = 1;
+    let timerInterval = null;
+    let startTime = 0;
+    let isPlaying = false;
+    let customNumbersList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    let audioCtx = null;
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playSound(type) {
+        try {
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'victory') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    g.gain.setValueAtTime(0.2, now + idx * 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.25);
+                    o.start(now + idx * 0.12);
+                    o.stop(now + idx * 0.12 + 0.25);
+                });
+            }
+        } catch (e) {}
+    }
+
+    function renderCharacters() {
+        const listContainer = document.getElementById('character-list');
+        listContainer.innerHTML = '';
+        characters.forEach(char => {
+            const isSelected = char.id === activeCharacterId;
+            const row = document.createElement('div');
+            row.className = `cursor-pointer rounded-xl p-3 md:p-4 border transition flex items-center justify-between gap-4 relative overflow-hidden ${isSelected ? char.activeColor + ' ring-2 ring-sky-400 shadow-lg' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/80'}`;
+            
+            const canvasId = `char-canvas-${char.id}`;
+            row.innerHTML = `
+                <div class="flex items-center gap-4 min-w-0">
+                    <div class="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-700/80 overflow-hidden flex-shrink-0 shadow-inner">
+                        <canvas id="${canvasId}" width="32" height="32" class="w-full h-full pixel-art"></canvas>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300">#${char.id}</span>
+                            <h3 class="font-bold text-white text-base md:text-lg truncate">${char.name}</h3>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800">${char.type}</span>
+                        </div>
+                        <p class="text-xs md:text-sm text-slate-400 truncate">${char.desc}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold px-3 py-1 rounded-lg ${isSelected ? 'bg-sky-500 text-slate-950' : 'bg-slate-800 text-slate-400'}">
+                        ${isSelected ? '使用中' : '選擇'}
+                    </span>
+                </div>
+            `;
+            
+            row.onclick = () => {
+                activeCharacterId = char.id;
+                document.getElementById('active-char-name').innerText = char.name;
+                renderCharacters();
+            };
+            
+            listContainer.appendChild(row);
+            setTimeout(() => drawCharacterAvatar(char.id, canvasId), 50);
+        });
+    }
+
+    function drawCharacterAvatar(id, canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 32, 32);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 32, 32);
+
+        if (id === 1) {
+            ctx.fillStyle = '#78350f'; ctx.fillRect(10, 2, 13, 4);
+            ctx.fillStyle = '#06b6d4'; ctx.fillRect(9, 6, 15, 2);
+            ctx.fillStyle = '#451a03'; ctx.fillRect(7, 8, 19, 2);
+            ctx.fillStyle = '#fed7aa'; ctx.fillRect(11, 11, 11, 7);
+            ctx.fillStyle = '#09090b'; ctx.fillRect(15, 12, 3, 3);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(16, 12, 1, 1);
+            ctx.fillStyle = '#92400e'; ctx.fillRect(5, 16, 8, 12); ctx.fillRect(19, 16, 8, 12);
+            ctx.fillStyle = '#ef4444'; ctx.fillRect(15, 16, 2, 2);
+            ctx.fillStyle = '#2563eb'; ctx.fillRect(14, 18, 4, 10);
+        } else if (id === 2) {
+            ctx.fillStyle = '#451a03'; ctx.fillRect(8, 6, 16, 8);
+            ctx.fillStyle = '#fed7aa'; ctx.fillRect(10, 10, 12, 10);
+            ctx.fillStyle = '#3b82f6'; ctx.fillRect(13, 14, 2, 2);
+            ctx.fillStyle = '#1e293b'; ctx.fillRect(8, 20, 16, 10);
+        } else if (id === 3) {
+            ctx.fillStyle = '#b45309'; ctx.fillRect(7, 6, 18, 14);
+            ctx.fillStyle = '#fed7aa'; ctx.fillRect(10, 10, 12, 10);
+            ctx.fillStyle = '#ec4899'; ctx.fillRect(13, 12, 2, 2);
+            ctx.fillStyle = '#f43f5e'; ctx.fillRect(10, 20, 12, 10);
+        } else if (id === 4) {
+            ctx.fillStyle = '#78350f'; ctx.fillRect(9, 4, 14, 4);
+            ctx.fillStyle = '#fed7aa'; ctx.fillRect(10, 9, 12, 10);
+            ctx.fillStyle = '#000000'; ctx.fillRect(11, 12, 4, 3); ctx.fillRect(17, 12, 4, 3);
+            ctx.fillStyle = '#1e3a8a'; ctx.fillRect(8, 19, 16, 10);
+        } else if (id === 5) {
+            ctx.fillStyle = '#581c87'; ctx.fillRect(6, 6, 20, 16);
+            ctx.fillStyle = '#fed7aa'; ctx.fillRect(10, 10, 12, 10);
+            ctx.fillStyle = '#0f172a'; ctx.fillRect(13, 13, 2, 2);
+            ctx.fillStyle = '#f43f5e'; ctx.fillRect(9, 20, 14, 10);
+        } else if (id === 6) {
+            ctx.fillStyle = '#78350f'; ctx.fillRect(8, 5, 16, 4);
+            ctx.fillStyle = '#fed7aa'; ctx.fillRect(10, 10, 12, 10);
+            ctx.fillStyle = '#000000'; ctx.fillRect(12, 13, 3, 2); ctx.fillRect(17, 13, 3, 2);
+            ctx.fillStyle = '#b45309'; ctx.fillRect(8, 20, 16, 10);
+        }
+    }
+
+    function setupGame(list) {
+        numbers = [...list];
+        currentTarget = 1;
+        renderGrid();
+        document.getElementById('score-display').innerText = `0 / ${numbers.length}`;
+        document.getElementById('timer-display').innerText = `0.00 秒`;
+    }
+
+    function renderGrid() {
+        const grid = document.getElementById('number-grid');
+        grid.innerHTML = '';
+        const shuffled = [...numbers].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach(num => {
+            const btn = document.createElement('button');
+            btn.className = `number-btn bg-slate-800 hover:bg-slate-700 border border-slate-700/80 rounded-xl aspect-square flex items-center justify-center text-xl md:text-2xl font-black text-white shadow-md transition transform hover:scale-105`;
+            btn.innerText = num;
+            btn.dataset.num = num;
+            btn.onclick = () => handleNumberClick(num, btn);
+            grid.appendChild(btn);
+        });
+    }
+
+    function startGame() {
+        document.getElementById('game-overlay-msg').classList.add('hidden');
+        setupGame(customNumbersList);
+        isPlaying = true;
+        startTime = Date.now();
+        
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+            document.getElementById('timer-display').innerText = `${elapsed} 秒`;
+        }, 50);
+    }
+
+    function handleNumberClick(num, btnElement) {
+        if (!isPlaying) return;
+
+        if (num === currentTarget) {
+            playSound('correct');
+            btnElement.classList.remove('bg-slate-800', 'hover:bg-slate-700', 'border-slate-700');
+            btnElement.classList.add('bg-emerald-600', 'border-emerald-400', 'text-white', 'scale-95');
+            btnElement.disabled = true;
+
+            currentTarget++;
+            document.getElementById('score-display').innerText = `${currentTarget - 1} / ${numbers.length}`;
+
+            if (currentTarget > Math.max(...numbers)) {
+                endGame();
+            }
+        } else {
+            playSound('wrong');
+            btnElement.classList.add('bg-rose-900/80', 'border-rose-500', 'animate-shake');
+            setTimeout(() => {
+                btnElement.classList.remove('bg-rose-900/80', 'border-rose-500', 'animate-shake');
+            }, 300);
+        }
+    }
+
+    function endGame() {
+        isPlaying = false;
+        clearInterval(timerInterval);
+        playSound('victory');
+
+        const finalTime = document.getElementById('timer-display').innerText;
+        const activeChar = characters.find(c => c.id === activeCharacterId);
+
+        document.getElementById('vic-char').innerText = activeChar.name;
+        document.getElementById('vic-time').innerText = finalTime;
+        document.getElementById('victory-modal').classList.remove('hidden');
+    }
+
+    function autoPlay() {
+        startGame();
+        let seq = [...numbers].sort((a, b) => a - b);
+        let idx = 0;
+        const autoInterval = setInterval(() => {
+            if (!isPlaying || idx >= seq.length) {
+                clearInterval(autoInterval);
+                return;
+            }
+            const targetVal = seq[idx];
+            const buttons = document.querySelectorAll('.number-btn');
+            buttons.forEach(btn => {
+                if (parseInt(btn.dataset.num) === targetVal && !btn.disabled) {
+                    btn.click();
+                    idx++;
+                }
+            });
+        }, 400);
+    }
+
+    document.getElementById('btn-open-app').onclick = () => {
+        document.getElementById('card-preview').classList.add('hidden');
+        document.getElementById('game-container').classList.remove('hidden');
+        renderCharacters();
+        setupGame(customNumbersList);
+    };
+
+    document.getElementById('btn-start').onclick = startGame;
+    document.getElementById('btn-overlay-start').onclick = startGame;
+    document.getElementById('btn-auto').onclick = autoPlay;
+
+    document.getElementById('btn-custom').onclick = () => {
+        document.getElementById('custom-modal').classList.remove('hidden');
+    };
+    document.getElementById('btn-modal-cancel').onclick = () => {
+        document.getElementById('custom-modal').classList.add('hidden');
+    };
+    document.getElementById('btn-modal-save').onclick = () => {
+        const val = document.getElementById('custom-input').value;
+        const parsed = val.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        if (parsed.length > 0) {
+            customNumbersList = parsed;
+            setupGame(customNumbersList);
+        }
+        document.getElementById('custom-modal').classList.add('hidden');
+    };
+
+    document.getElementById('btn-victory-close').onclick = () => {
+        document.getElementById('victory-modal').classList.add('hidden');
+        document.getElementById('game-overlay-msg').classList.remove('hidden');
+    };
+</script>
+</body>
+</html>
